@@ -1,30 +1,16 @@
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-/**
- * Generates a signed JWT for a given user ID.
- * @param {string} id - MongoDB ObjectId of the user
- * @returns {string} Signed JWT string
- */
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || "7d",
   });
 };
 
-/**
- * @desc    Register a new user
- * @route   POST /api/auth/register
- * @access  Public (or Admin-only in production — gate with authorize('admin') on the route)
- *
- * Body: { name, email, password, role }
- * Role defaults to 'bda' if not provided. Only 'admin' or 'bda' are valid.
- */
 const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
 
-  // --- Input Validation ---
   if (!name || !email || !password) {
     return res.status(400).json({
       success: false,
@@ -43,7 +29,6 @@ const registerUser = async (req, res) => {
   const assignedRole = role && validRoles.includes(role) ? role : "bda";
 
   try {
-    // --- Duplicate Check ---
     const existingUser = await User.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(409).json({
@@ -52,11 +37,9 @@ const registerUser = async (req, res) => {
       });
     }
 
-    // --- Hash Password ---
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // --- Create User ---
     const user = await User.create({
       name,
       email: email.toLowerCase(),
@@ -64,7 +47,6 @@ const registerUser = async (req, res) => {
       role: assignedRole,
     });
 
-    // --- Respond (never return the hashed password) ---
     res.status(201).json({
       success: true,
       message: "User registered successfully.",
@@ -85,17 +67,9 @@ const registerUser = async (req, res) => {
   }
 };
 
-/**
- * @desc    Authenticate a user and return a JWT
- * @route   POST /api/auth/login
- * @access  Public
- *
- * Body: { email, password }
- */
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
-  // --- Input Validation ---
   if (!email || !password) {
     return res.status(400).json({
       success: false,
@@ -104,12 +78,8 @@ const loginUser = async (req, res) => {
   }
 
   try {
-    // --- Find User (explicitly select password for comparison) ---
-    const user = await User.findOne({ email: email.toLowerCase() }).select(
-      "+password"
-    );
+    const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
 
-    // Use a generic error message to prevent user enumeration attacks
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -117,7 +87,6 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // --- Compare Passwords ---
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -127,7 +96,6 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // --- Respond ---
     res.status(200).json({
       success: true,
       message: "Login successful.",
@@ -148,17 +116,11 @@ const loginUser = async (req, res) => {
   }
 };
 
-/**
- * @desc    Get the currently authenticated user's profile
- * @route   GET /api/auth/me
- * @access  Private
- */
 const getMe = async (req, res) => {
-  // req.user is already populated by the protect middleware
   res.status(200).json({
     success: true,
     data: req.user,
   });
 };
 
-module.exports = { registerUser, loginUser, getMe };
+export { registerUser, loginUser, getMe };

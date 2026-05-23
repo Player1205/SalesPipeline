@@ -1,11 +1,6 @@
-const jwt = require("jsonwebtoken");
-const User = require("../models/User");
+import jwt from "jsonwebtoken";
+import User from "../models/User.js";
 
-/**
- * protect
- * Verifies the JWT from the Authorization header.
- * Attaches the authenticated user object to req.user on success.
- */
 const protect = async (req, res, next) => {
   let token;
 
@@ -26,7 +21,6 @@ const protect = async (req, res, next) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Fetch fresh user data — excludes password via select("-password")
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
@@ -52,13 +46,6 @@ const protect = async (req, res, next) => {
   }
 };
 
-/**
- * authorize(...roles)
- * Role-based access control gate. Must be used AFTER protect middleware.
- * Usage: router.get('/admin-only', protect, authorize('admin'), handler)
- *
- * @param {...string} roles - One or more allowed roles (e.g., 'admin', 'bda')
- */
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
@@ -79,4 +66,4 @@ const authorize = (...roles) => {
   };
 };
 
-module.exports = { protect, authorize };
+export { protect, authorize };
