@@ -32,7 +32,8 @@ export const AuthProvider = ({ children }) => {
 
   const login = useCallback(async (email, password) => {
     const { data } = await API.post('/auth/login', { email, password });
-    const { token: newToken, user: newUser } = data;
+    // Server returns: { success, message, data: { _id, name, email, role, token } }
+    const { token: newToken, ...newUser } = data.data;
     localStorage.setItem('nexus_token', newToken);
     localStorage.setItem('nexus_user', JSON.stringify(newUser));
     setToken(newToken);

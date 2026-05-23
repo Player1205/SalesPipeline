@@ -59,9 +59,10 @@ const leadSchema = new mongoose.Schema(
 
     email: {
       type: String,
-      required: [true, "Contact email is required."],
+      required: false,
       lowercase: true,
       trim: true,
+      default: null,
       match: [
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
         "Please provide a valid contact email.",

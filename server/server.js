@@ -14,6 +14,7 @@ const app = express();
 
 const allowedOrigins = [
   "http://localhost:5173", // Vite dev server
+  "http://localhost:3000", // React fallback / browser tools
   process.env.CLIENT_URL,  // Production frontend URL (set in .env)
 ].filter(Boolean);
 

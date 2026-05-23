@@ -6,7 +6,7 @@ import axios from 'axios';
  * to every outgoing request via a request interceptor.
  */
 const API = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://localhost:5000/api',
   headers: { 'Content-Type': 'application/json' },
 });
 

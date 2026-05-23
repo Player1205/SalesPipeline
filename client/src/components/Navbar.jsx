@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Bell, LogOut, ChevronDown, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
@@ -9,7 +10,13 @@ function getInitials(name) {
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className="h-16 bg-white border-b border-gray-200 flex items-center px-5 gap-3 flex-shrink-0 z-10">
@@ -64,7 +71,7 @@ export default function Navbar() {
 
         {/* Logout */}
         <button
-          onClick={logout}
+          onClick={handleLogout}
           title="Sign out"
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-slate-500
                      hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors ml-1"

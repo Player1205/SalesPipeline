@@ -17,12 +17,12 @@ const BADGE = {
 };
 
 const STAGE_META = {
-  'New':           { bar: 'bg-blue-500'   },
-  'Contacted':     { bar: 'bg-purple-500' },
-  'Proposal Sent': { bar: 'bg-yellow-500' },
-  'Negotiation':   { bar: 'bg-orange-500' },
-  'Won':           { bar: 'bg-emerald-500'},
-  'Lost':          { bar: 'bg-rose-500'   },
+  'New':           { bar: 'bg-blue-500'    },
+  'Contacted':     { bar: 'bg-purple-500'  },
+  'Proposal Sent': { bar: 'bg-yellow-500'  },
+  'Negotiation':   { bar: 'bg-orange-500'  },
+  'Won':           { bar: 'bg-emerald-500' },
+  'Lost':          { bar: 'bg-rose-500'    },
 };
 
 // ── Helpers ─────────────────────────────────────────────
@@ -34,6 +34,12 @@ const fmt$ = (v = 0) => {
 
 const initials = (s = '') =>
   s.split(' ').map((w) => w[0]).join('').toUpperCase().slice(0, 2) || 'U';
+
+// Returns leads created in the last 7 days
+const recentCount = (leads) => {
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  return leads.filter((l) => new Date(l.createdAt).getTime() > cutoff).length;
+};
 
 // ── Metric Card ─────────────────────────────────────────
 function MetricCard({ title, value, sub, Icon, iconBg, trend, trendLabel }) {
@@ -78,14 +84,15 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Computed metrics ─────────────────────────────────
-  const active       = leads.filter((l) => !['Won', 'Lost'].includes(l.status));
-  const won          = leads.filter((l) => l.status === 'Won');
-  const pipelineVal  = active.reduce((s, l) => s + (l.value || 0), 0);
-  const wonVal       = won.reduce((s, l) => s + (l.value || 0), 0);
-  const convRate     = leads.length ? ((won.length / leads.length) * 100).toFixed(1) : '0.0';
+  // ── Computed metrics (all derived from live data) ─────
+  const active      = leads.filter((l) => !['Won', 'Lost'].includes(l.status));
+  const won         = leads.filter((l) => l.status === 'Won');
+  const pipelineVal = active.reduce((s, l) => s + (l.value || 0), 0);
+  const wonVal      = won.reduce((s, l) => s + (l.value || 0), 0);
+  const convRate    = leads.length ? ((won.length / leads.length) * 100).toFixed(1) : '0.0';
+  const newThisWeek = recentCount(leads);
 
-  const stageCounts  = leads.reduce((acc, l) => {
+  const stageCounts = leads.reduce((acc, l) => {
     acc[l.status] = (acc[l.status] || 0) + 1;
     return acc;
   }, {});
@@ -120,11 +127,9 @@ export default function Dashboard() {
         <MetricCard
           title="Total Pipeline Value"
           value={fmt$(pipelineVal)}
-          sub={`${active.length} active deals`}
+          sub={`${active.length} active deal${active.length !== 1 ? 's' : ''}`}
           Icon={DollarSign}
           iconBg="bg-indigo-100 text-indigo-600"
-          trend="up"
-          trendLabel="+12.5%"
         />
         <MetricCard
           title="Active Leads"
@@ -132,26 +137,24 @@ export default function Dashboard() {
           sub={`${leads.length} leads total`}
           Icon={Users}
           iconBg="bg-blue-100 text-blue-600"
-          trend="up"
-          trendLabel="+3 this week"
+          trend={newThisWeek > 0 ? 'up' : undefined}
+          trendLabel={newThisWeek > 0 ? `+${newThisWeek} this week` : undefined}
         />
         <MetricCard
           title="Won Revenue"
           value={fmt$(wonVal)}
-          sub={`${won.length} deals closed`}
+          sub={`${won.length} deal${won.length !== 1 ? 's' : ''} closed`}
           Icon={TrendingUp}
           iconBg="bg-emerald-100 text-emerald-600"
-          trend="up"
-          trendLabel="+8.2%"
         />
         <MetricCard
           title="Conversion Rate"
           value={`${convRate}%`}
-          sub="Lead to close ratio"
+          sub="Lead-to-close ratio"
           Icon={Target}
           iconBg="bg-orange-100 text-orange-600"
           trend={parseFloat(convRate) >= 20 ? 'up' : 'down'}
-          trendLabel={`${convRate}% rate`}
+          trendLabel={`${convRate}% overall`}
         />
       </div>
 
@@ -195,8 +198,8 @@ export default function Dashboard() {
                         <p className="text-sm font-semibold text-slate-800 truncate max-w-[160px]">
                           {lead.companyName || lead.company || '—'}
                         </p>
-                        {lead.contactName && (
-                          <p className="text-xs text-slate-400 truncate">{lead.contactName}</p>
+                        {lead.contactPerson && (
+                          <p className="text-xs text-slate-400 truncate">{lead.contactPerson}</p>
                         )}
                       </td>
                       <td className="px-4 py-3.5">

@@ -155,7 +155,7 @@ export default function KanbanBoard() {
     setError(null);
     try {
       const { data } = await API.get('/leads');
-      setLeads(Array.isArray(data) ? data : data.leads ?? []);
+      setLeads(data.data ?? []);
     } catch (err) {
       console.error('KanbanBoard fetch error:', err);
       setError('Could not load leads. Is the server running?');
@@ -173,17 +173,17 @@ export default function KanbanBoard() {
     if (!destination) return;
     if (source.droppableId === destination.droppableId && source.index === destination.index) return;
 
-    const newStatus = destination.droppableId;
+    const newStage = destination.droppableId;
 
     // Optimistic UI update
     setLeads((prev) =>
-      prev.map((l) => (l._id === draggableId ? { ...l, status: newStatus } : l))
+      prev.map((l) => (l._id === draggableId ? { ...l, status: newStage } : l))
     );
 
     try {
-      await API.put(`/leads/${draggableId}`, { status: newStatus });
+      await API.patch(`/leads/${draggableId}/stage`, { stage: newStage });
     } catch (err) {
-      console.error('Failed to persist status change:', err);
+      console.error('Failed to persist stage change:', err);
       fetchLeads(); // revert on failure
     }
   };
