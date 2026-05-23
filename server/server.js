@@ -2,6 +2,8 @@ import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import authRoutes from "./routes/authRoutes.js";
 import leadRoutes from "./routes/leadRoutes.js";
@@ -9,6 +11,7 @@ import leadRoutes from "./routes/leadRoutes.js";
 dotenv.config();
 
 const app = express();
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 
@@ -35,12 +38,12 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
+// ─── API Routes ───────────────────────────────────────────────────────────────
 
 app.use("/api/auth", authRoutes);
 app.use("/api/leads", leadRoutes);
 
-// Health-check – useful for deployment platforms (Render, Railway, etc.)
+// Health-check
 app.get("/api/health", (_req, res) => {
   res.status(200).json({
     status: "ok",
@@ -49,10 +52,16 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// ─── 404 handler ─────────────────────────────────────────────────────────────
+// ─── Serve React frontend (production) ───────────────────────────────────────
+// In production Render builds client/dist and Express serves it directly.
+// In local dev this block is never hit — Vite runs on its own port.
 
-app.use((_req, res) => {
-  res.status(404).json({ message: "Route not found." });
+const clientDist = path.join(__dirname, "../client/dist");
+app.use(express.static(clientDist));
+
+// Any non-API request gets the React app (handles client-side routing)
+app.get("*", (req, res) => {
+  res.sendFile(path.join(clientDist, "index.html"));
 });
 
 // ─── Global error handler ─────────────────────────────────────────────────────

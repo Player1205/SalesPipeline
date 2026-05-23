@@ -2,11 +2,11 @@ import axios from 'axios';
 
 /**
  * Axios instance pre-configured for the Nexus API.
- * Automatically attaches the JWT token from localStorage
- * to every outgoing request via a request interceptor.
+ * - In production (served from Express): baseURL is /api — same origin, no CORS.
+ * - In local dev (Vite on :5173): baseURL is http://localhost:5000/api.
  */
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
